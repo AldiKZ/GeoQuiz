@@ -49,4 +49,14 @@
             android:drawablePadding="4dp"
             android:text="@string/next_button"/>
 
+    <ImageButton
+        android:id="@+id/replay_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="70dp"
+        android:minWidth="70dp"
+        android:minHeight="70dp"
+        android:src="@drawable/replay"/>
+
 </FrameLayout>

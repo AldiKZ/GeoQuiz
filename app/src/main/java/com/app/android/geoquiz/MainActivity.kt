@@ -6,26 +6,32 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.get
 
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
+    // Ленивая инициализация (см. заметки)
+    private val quizViewModel: QuizViewModel by lazy {
+        // Связываем текущую активность и ViewModel
+        ViewModelProvider(this).get(QuizViewModel::class.java)
+    }
+
     private lateinit var trueButton: Button
     private lateinit var falseButton: Button
     private lateinit var backButton: Button
     private lateinit var nextButton: Button
+    private lateinit var replayButton: ImageButton
     private lateinit var questionTextView: TextView
 
-    private val questionBank = listOf(
-        Question(R.string.question_africa, true, false),
-        Question(R.string.question_australia, true, false),
-        Question(R.string.question_mideast, false, false),
-        Question(R.string.question_oceans, false, false)
-    )
-    private var currentIndex = 0
+
+    private var numbResponse = 0
+    private var correctResponse = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,53 +41,86 @@ class MainActivity : AppCompatActivity() {
         falseButton = findViewById(R.id.false_button)
         backButton = findViewById(R.id.back_button)
         nextButton = findViewById(R.id.next_button)
+        replayButton = findViewById(R.id.replay_button)
         questionTextView = findViewById(R.id.question_text_view)
 
+        replayButton.setVisibility(View.INVISIBLE)
         updateQuestion()
         trueButton.setOnClickListener { view: View ->
             checkAnswer(true)
-            questionBank[currentIndex].resolved = true
-            trueButton.setEnabled(false)
-            falseButton.setEnabled(false)
+            quizViewModel.changeResolvedStatus(true)
+            isResolved()
         }
         falseButton.setOnClickListener { view: View ->
             checkAnswer(false)
-            questionBank[currentIndex].resolved = true
-            trueButton.setEnabled(false)
-            falseButton.setEnabled(false)
+            quizViewModel.changeResolvedStatus(true)
+            isResolved()
         }
         backButton.setOnClickListener {
             view: View ->
-            currentIndex = (currentIndex - 1)
-            if (currentIndex < 0)
-                currentIndex = questionBank.size - 1
+            quizViewModel.currentIndex = (quizViewModel.currentIndex - 1)
+            if (quizViewModel.currentIndex < 0)
+                quizViewModel.currentIndex = quizViewModel.questionBank.size - 1
             else
-                currentIndex % questionBank.size
+                quizViewModel.currentIndex % quizViewModel.questionBank.size
+            isResolved()
             updateQuestion()
         }
         nextButton.setOnClickListener {
             view: View ->
-            currentIndex = (currentIndex + 1) % questionBank.size
+            quizViewModel.moveToNext()
+            isResolved()
+            updateQuestion()
+        }
+        replayButton.setOnClickListener {
+            view: View ->
+            quizViewModel.currentIndex = 0
+            numbResponse = 0
+            correctResponse = 0
+            nextButton.setEnabled(true)
+            backButton.setEnabled(true)
+            for (question in quizViewModel.questionBank) {
+                question.resolved = false
+            }
+            isResolved()
             updateQuestion()
         }
     }
     private fun updateQuestion() {
-        val questionTextResId = questionBank[currentIndex].textResId
+        val questionTextResId = quizViewModel.currentQuestionText
         questionTextView.setText(questionTextResId)
-        if (questionBank[currentIndex].resolved == true) {
+    }
+
+    private fun isResolved() {
+        if (quizViewModel.currentQuestionResolved == true) {
             trueButton.setEnabled(false)
             falseButton.setEnabled(false)
-        }
-    }
-    private fun checkAnswer(userAnswer: Boolean) {
-        val correctAnswer = questionBank[currentIndex].answer
-        val messageResId = if (userAnswer == correctAnswer) {
-            R.string.correct_toast
+            numbResponse++
+            if (numbResponse == quizViewModel.questionBank.size){
+                nextButton.setEnabled(false)
+                backButton.setEnabled(false)
+                val text:String = "Game over. You answered correctly $correctResponse/$numbResponse"
+                questionTextView.setText(text)
+                replayButton.setVisibility(View.VISIBLE)
+            }
         } else {
-            R.string.incorrect_toast
+            falseButton.setEnabled(true)
+            trueButton.setEnabled(true)
+        }
+
+    }
+
+    private fun checkAnswer(userAnswer: Boolean) {
+        val correctAnswer = quizViewModel.currentQuestionAnswer
+        val messageResId: Int
+        if (userAnswer == correctAnswer) {
+            messageResId = R.string.correct_toast
+            correctResponse++
+        } else {
+            messageResId = R.string.incorrect_toast
         }
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show()
-        questionBank[currentIndex].resolved = true
+        quizViewModel.changeResolvedStatus(true)
     }
 
     override fun onStart() {
