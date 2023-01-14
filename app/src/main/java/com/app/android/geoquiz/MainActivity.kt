@@ -3,6 +3,7 @@ package com.app.android.geoquiz
 import Question
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -13,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.get
 
 private const val TAG = "MainActivity"
+private const val KEY_INDEX = "index"
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +39,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Log.d(TAG, "onCreate(Bundle?) called")
+
+        val currentIndex = savedInstanceState?.getInt(KEY_INDEX, 0) ?: 0
+        quizViewModel.currentIndex = currentIndex
+
         trueButton = findViewById(R.id.true_button)
         falseButton = findViewById(R.id.false_button)
         backButton = findViewById(R.id.back_button)
@@ -86,6 +92,11 @@ class MainActivity : AppCompatActivity() {
             updateQuestion()
         }
     }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt(KEY_INDEX, quizViewModel.currentIndex)
+    }
     private fun updateQuestion() {
         val questionTextResId = quizViewModel.currentQuestionText
         questionTextView.setText(questionTextResId)
@@ -123,28 +134,4 @@ class MainActivity : AppCompatActivity() {
         quizViewModel.changeResolvedStatus(true)
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart(Bundle?) called")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume(Bundle?) called")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause(Bundle?) called")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop(Bundle?) called")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy(Bundle?) called")
-    }
 }
