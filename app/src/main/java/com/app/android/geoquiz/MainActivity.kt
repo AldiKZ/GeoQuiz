@@ -1,6 +1,8 @@
 package com.app.android.geoquiz
 
 import Question
+import android.content.Context
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.PersistableBundle
@@ -24,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         ViewModelProvider(this).get(QuizViewModel::class.java)
     }
 
+    private lateinit var cheatButton: Button
     private lateinit var trueButton: Button
     private lateinit var falseButton: Button
     private lateinit var backButton: Button
@@ -43,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         val currentIndex = savedInstanceState?.getInt(KEY_INDEX, 0) ?: 0
         quizViewModel.currentIndex = currentIndex
 
+        cheatButton = findViewById(R.id.cheat_button)
         trueButton = findViewById(R.id.true_button)
         falseButton = findViewById(R.id.false_button)
         backButton = findViewById(R.id.back_button)
@@ -52,6 +56,10 @@ class MainActivity : AppCompatActivity() {
 
         replayButton.setVisibility(View.INVISIBLE)
         updateQuestion()
+        cheatButton.setOnClickListener {
+            val intent = Intent(this, CheatActivity::class.java)
+            startActivity(intent)
+        }
         trueButton.setOnClickListener { view: View ->
             checkAnswer(true)
             quizViewModel.changeResolvedStatus(true)
@@ -69,13 +77,11 @@ class MainActivity : AppCompatActivity() {
                 quizViewModel.currentIndex = quizViewModel.questionBank.size - 1
             else
                 quizViewModel.currentIndex % quizViewModel.questionBank.size
-            isResolved()
+
             updateQuestion()
         }
         nextButton.setOnClickListener {
-            view: View ->
             quizViewModel.moveToNext()
-            isResolved()
             updateQuestion()
         }
         replayButton.setOnClickListener {
