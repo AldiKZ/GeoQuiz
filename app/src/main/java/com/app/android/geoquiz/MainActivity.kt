@@ -1,6 +1,8 @@
 package com.app.android.geoquiz
 
 import Question
+import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -12,12 +14,17 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.get
 
 private const val TAG = "MainActivity"
 private const val KEY_INDEX = "index"
+private const val EXTRA_CODE_CHEAT = 0
+private const val REQUEST_CODE_CHEAT = 0
+private const val EXTRA_ANSWER_SHOWN = "com.app.android.geoquiz.answer_shown"
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
 
     // Ленивая инициализация (см. заметки)
@@ -99,6 +106,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != Activity.RESULT_OK) {
+            return
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            quizViewModel.isCheater = data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+        }
+    }
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putInt(KEY_INDEX, quizViewModel.currentIndex)
@@ -129,15 +146,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAnswer(userAnswer: Boolean) {
         val correctAnswer = quizViewModel.currentQuestionAnswer
-        val messageResId: Int
-        if (userAnswer == correctAnswer) {
-            messageResId = R.string.correct_toast
-            correctResponse++
-        } else {
-            messageResId = R.string.incorrect_toast
+        val messageResId = when {
+            quizViewModel.isCheater -> R.string.judgment_toast
+            userAnswer == correctAnswer -> R.string.correct_toast
+            else -> R.string.incorrect_toast
         }
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show()
-        quizViewModel.changeResolvedStatus(true)
     }
 
 }
